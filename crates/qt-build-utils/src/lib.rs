@@ -111,7 +111,7 @@ impl QtBuild {
         println!("cargo:rerun-if-env-changed=QT_VERSION_MAJOR");
         fn verify_candidate(candidate: &str) -> Result<(&str, versions::SemVer), QtBuildError> {
             match Command::new(candidate)
-                .args(["-query", "QT_VERSION"])
+                .args(&["-query", "QT_VERSION"])
                 .output()
             {
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err(QtBuildError::QtMissing),
@@ -125,12 +125,6 @@ impl QtBuild {
                         let qmake_version = versions::SemVer::new(&version_string).unwrap();
                         if let Ok(env_version) = env::var("QT_VERSION_MAJOR") {
                             let env_version = match env_version.trim().parse::<u32>() {
-                                Err(e) if *e.kind() == std::num::IntErrorKind::Empty => {
-                                    println!(
-                                        "cargo:warning=QT_VERSION_MAJOR environment variable defined but empty"
-                                    );
-                                    return Ok((candidate, qmake_version));
-                                }
                                 Err(e) => {
                                     return Err(QtBuildError::QtVersionMajorInvalid {
                                         qt_version_major_env_var: env_version,
@@ -203,7 +197,7 @@ impl QtBuild {
                             qt_version_major,
                         });
                     }
-                    eprintln!("Candidate qmake executable `{executable_name}` is for Qt{qmake_version} but QT_VERISON_MAJOR environment variable specified as {qt_version_major}. Trying next candidate executable name `{}`...", candidate_executable_names[index + 1]);
+                    eprintln!("Candidate qmake executable `{}` is for Qt{} but QT_VERISON_MAJOR environment variable specified as {}. Trying next candidate executable name `{}`...", executable_name, qmake_version, qt_version_major, candidate_executable_names[index + 1]);
                     continue;
                 }
                 Err(QtBuildError::QtMissing) => continue,
@@ -218,7 +212,7 @@ impl QtBuild {
     pub fn qmake_query(&self, var_name: &str) -> String {
         std::str::from_utf8(
             &Command::new(&self.qmake_executable)
-                .args(["-query", var_name])
+                .args(&["-query", var_name])
                 .output()
                 .unwrap()
                 .stdout,
@@ -320,14 +314,14 @@ impl QtBuild {
     /// Lazy load the path of a Qt executable tool
     /// Skip doing this in the constructor because not every user of this crate will use each tool
     fn get_qt_tool(&self, tool_name: &str) -> Result<String, ()> {
-        for qmake_query_var in [
+        for qmake_query_var in &[
             "QT_HOST_LIBEXECS",
             "QT_HOST_BINS",
             "QT_INSTALL_LIBEXECS",
             "QT_INSTALL_BINS",
         ] {
             let executable_path = format!("{}/{}", self.qmake_query(qmake_query_var), tool_name);
-            match Command::new(&executable_path).args(["-help"]).output() {
+            match Command::new(&executable_path).args(&["-help"]).output() {
                 Ok(_) => return Ok(executable_path),
                 Err(_) => continue,
             }
@@ -350,7 +344,7 @@ impl QtBuild {
         ));
 
         let _ = Command::new(self.moc_executable.as_ref().unwrap())
-            .args([
+            .args(&[
                 input_path.to_str().unwrap(),
                 "-o",
                 output_path.to_str().unwrap(),
@@ -376,7 +370,7 @@ impl QtBuild {
         ));
 
         let _ = Command::new(self.rcc_executable.as_ref().unwrap())
-            .args([
+            .args(&[
                 input_path.to_str().unwrap(),
                 "-o",
                 output_path.to_str().unwrap(),

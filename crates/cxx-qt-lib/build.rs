@@ -33,7 +33,7 @@ fn main() {
         "qurl",
         "qvariant",
     ];
-    for bridge in bridges {
+    for bridge in &bridges {
         println!("cargo:rerun-if-changed=src/types/{}.rs", bridge);
     }
 
@@ -48,7 +48,7 @@ fn main() {
             .iter()
             .map(|bridge| format!("src/types/{}.rs", bridge)),
     );
-    for bridge in bridges {
+    for bridge in &bridges {
         builder.file(format!("src/types/{}.cpp", bridge));
         println!("cargo:rerun-if-changed=src/types/{}.cpp", bridge);
     }
