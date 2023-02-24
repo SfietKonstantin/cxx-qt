@@ -110,12 +110,19 @@ impl QtBuild {
         println!("cargo:rerun-if-env-changed=QMAKE");
         println!("cargo:rerun-if-env-changed=QT_VERSION_MAJOR");
         fn verify_candidate(candidate: &str) -> Result<(&str, versions::SemVer), QtBuildError> {
+            println!("Running {}", candidate);
             match Command::new(candidate)
                 .args(&["-query", "QT_VERSION"])
                 .output()
             {
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err(QtBuildError::QtMissing),
-                Err(e) => Err(QtBuildError::QmakeFailed(e)),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    println!("Running {}: QtMissing", candidate);
+                    Err(QtBuildError::QtMissing)
+                }
+                Err(e) => {
+                    println!("Running {}: QtBuildError {}", candidate, e);
+                    Err(QtBuildError::QmakeFailed(e))
+                }
                 Ok(output) => {
                     if output.status.success() {
                         let version_string = std::str::from_utf8(&output.stdout)
