@@ -3,6 +3,39 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+fn bridges() -> [(&'static str, &'static str); 13] {
+    let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    let (qpointf, qrectf, qsizef) = match target_arch.as_str() {
+        "x86" | "arm" => (
+            "qpointf/qpointf32.rs",
+            "qrectf/qrectf32.rs",
+            "qsizef/qsizef32.rs",
+        ),
+        "x86_64" | "aarch64" => (
+            "qpointf/qpointf64.rs",
+            "qrectf/qrectf64.rs",
+            "qsizef/qsizef64.rs",
+        ),
+        _ => panic!("Unsupported architecture {}", target_arch),
+    };
+
+    [
+        ("qcolor.rs", "qcolor.cpp"),
+        ("qdate.rs", "qdate.cpp"),
+        ("qdatetime.rs", "qdatetime.cpp"),
+        ("qpoint.rs", "qpoint.cpp"),
+        (qpointf, "qpointf.cpp"),
+        ("qrect.rs", "qrect.cpp"),
+        (qrectf, "qrectf.cpp"),
+        ("qsize.rs", "qsize.cpp"),
+        (qsizef, "qsizef.cpp"),
+        ("qstring.rs", "qstring.cpp"),
+        ("qtime.rs", "qtime.cpp"),
+        ("qurl.rs", "qurl.cpp"),
+        ("qvariant.rs", "qvariant.cpp"),
+    ]
+}
+
 fn main() {
     let qt_modules = vec!["Core", "Gui"]
         .iter()
@@ -18,23 +51,9 @@ fn main() {
         qtbuild.version().major
     );
 
-    let bridges = [
-        "qcolor",
-        "qdate",
-        "qdatetime",
-        "qpoint",
-        "qpointf",
-        "qrect",
-        "qrectf",
-        "qsize",
-        "qsizef",
-        "qstring",
-        "qtime",
-        "qurl",
-        "qvariant",
-    ];
+    let bridges = bridges();
     for bridge in &bridges {
-        println!("cargo:rerun-if-changed=src/types/{}.rs", bridge);
+        println!("cargo:rerun-if-changed=src/types/{}", bridge.0);
     }
 
     for include_path in qtbuild.include_paths() {
@@ -46,11 +65,11 @@ fn main() {
     let mut builder = cxx_build::bridges(
         bridges
             .iter()
-            .map(|bridge| format!("src/types/{}.rs", bridge)),
+            .map(|bridge| format!("src/types/{}", bridge.0)),
     );
     for bridge in &bridges {
-        builder.file(format!("src/types/{}.cpp", bridge));
-        println!("cargo:rerun-if-changed=src/types/{}.cpp", bridge);
+        builder.file(format!("src/types/{}", bridge.1));
+        println!("cargo:rerun-if-changed=src/types/{}", bridge.1);
     }
     builder.file("src/qt_types.cpp");
     println!("cargo:rerun-if-changed=src/qt_types.cpp");

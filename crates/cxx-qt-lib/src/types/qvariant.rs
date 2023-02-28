@@ -224,8 +224,13 @@ pub struct QVariant {
     ///
     /// Qt5 QString has one member, which contains three uints (but they are optimised to a size of 8) and a union
     /// Qt6 QString has one member, which contains three pointers and a union (pointer largest)
-    #[cfg(qt_version_major = "5")]
-    _space: MaybeUninit<[usize; 2]>,
+    #[cfg(all(qt_version_major = "5", target_arch = "x86"))]
+    _space: MaybeUninit<[usize; 3]>,
+    #[cfg(all(
+        qt_version_major = "5",
+        any(target_arch = "x86_64", target_arch = "arm", target_arch = "aarch64")
+    ))]
+    _space: MaybeUninit<[i64; 2]>,
     #[cfg(qt_version_major = "6")]
     _space: MaybeUninit<[usize; 4]>,
 }

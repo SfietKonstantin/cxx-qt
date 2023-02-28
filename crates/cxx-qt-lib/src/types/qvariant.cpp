@@ -27,11 +27,33 @@
 assert_alignment_and_size(QVariant,
                           alignof(std::size_t),
                           sizeof(std::size_t[4]));
-#else
+#define CHECKED 1
+#endif
+
+#ifdef Q_PROCESSOR_X86_32
 assert_alignment_and_size(QVariant,
                           alignof(std::size_t),
-                          sizeof(std::size_t[2]));
+                          sizeof(std::size_t[3]));
+#define CHECKED 1
+#endif // Q_PROCESSOR_X86_32
+
+#ifdef Q_PROCESSOR_X86_64
+assert_alignment_and_size(QVariant,
+                          alignof(std::int64_t),
+                          sizeof(std::int64_t[2]));
+#define CHECKED 1
+#endif // Q_PROCESSOR_X86_64
+
+#ifdef Q_PROCESSOR_ARM
+assert_alignment_and_size(QVariant,
+                          alignof(std::int64_t),
+                          sizeof(std::int64_t[2]));
+#define CHECKED 1
 #endif
+
+#ifndef CHECKED
+static_assert(false, "Unsuported target");
+#endif // CHECKED
 
 static_assert(!std::is_trivially_copy_assignable<QVariant>::value);
 static_assert(!std::is_trivially_copy_constructible<QVariant>::value);

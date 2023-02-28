@@ -9,11 +9,17 @@
 
 #include "assertion_utils.h"
 
-// QSizeF has two qreal members
+// QSizeF has two "qreal" members
 // https://code.qt.io/cgit/qt/qtbase.git/tree/src/corelib/tools/qsize.h?h=v5.15.6-lts-lgpl#n276
 //
 // https://code.qt.io/cgit/qt/qtbase.git/tree/src/corelib/tools/qsize.h?h=v6.2.4#n302
+#if (QT_POINTER_SIZE == 4)
+assert_alignment_and_size(QSizeF, alignof(float), sizeof(float[2]));
+#elif (QT_POINTER_SIZE == 8)
 assert_alignment_and_size(QSizeF, alignof(double), sizeof(double[2]));
+#else
+static_assert(false, "Unsuported target");
+#endif
 
 static_assert(std::is_trivially_copyable<QSizeF>::value,
               "QSizeF must be trivially copyable!");
